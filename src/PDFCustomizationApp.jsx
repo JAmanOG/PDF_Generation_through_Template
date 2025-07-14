@@ -236,9 +236,8 @@ export default function PDFCustomizationApp() {
           console.warn(`Error processing field ${field.name}:`, fieldError);
         }
       }
-      
-      
       const modifiedPdfBytes = await pdfDoc.save();
+      form.flatten();
       setPdfBytes(modifiedPdfBytes);
       
     } catch (error) {
@@ -318,9 +317,13 @@ export default function PDFCustomizationApp() {
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
 
-      // Process all form fields with the same logic as preview
-      for (const field of fields) {
-        const value = formData[field.name];
+      const backgroundFields = fields.filter(field => field.name === 'mainBackground');
+      const nonBackgroundFields = fields.filter(field => field.name !== 'mainBackground');
+      const orderedFields = [...backgroundFields, ...nonBackgroundFields];
+      
+      // Then use orderedFields instead of fields in your processing loop
+      for (const field of orderedFields) {
+              const value = formData[field.name];
         if (!value) continue;
         
         if (value === undefined || value === null) continue;
@@ -361,7 +364,6 @@ export default function PDFCustomizationApp() {
             } catch (buttonError) {
               console.log(`Field ${field.name} is not a button, using manual drawing`);
               
-              // Fallback to manual drawing using widget position
               const widgets = formField.acroField.getWidgets();
               if (widgets && widgets.length > 0) {
                 const rect = widgets[0].getRectangle();
