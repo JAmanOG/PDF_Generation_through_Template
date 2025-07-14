@@ -19,6 +19,7 @@
     "@mui/material": "^7.2.0",
     "@react-pdf/renderer": "^4.3.0",
     "@tailwindcss/vite": "^4.1.11",
+    "jspdf": "^3.0.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
     "react": "^19.1.0",

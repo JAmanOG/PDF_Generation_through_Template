@@ -9,13 +9,14 @@ import { Download, Refresh, PictureAsPdf,
   Edit, Business, 
   DesignServices, DocumentScanner,
 } from "@mui/icons-material";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFName } from "pdf-lib";
 import PDFFormTemplate from "./PDFFormTemplate";
 import { styled } from "@mui/material/styles";
 import { Document, Page } from "react-pdf";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
+import { jsPDF } from "jspdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -148,7 +149,7 @@ export default function PDFCustomizationApp() {
     });
   }, []);
 
-  const generatePdfPreview = useCallback(async () => {
+  const generatePdfPreview = useCallback(async (returnBytes = false) => {
     if (!selectedTemplate || fields.length === 0) {
       setPdfBytes(null);
       return;
@@ -235,19 +236,24 @@ export default function PDFCustomizationApp() {
           console.warn(`Error processing field ${field.name}:`, fieldError);
         }
       }
+
       const modifiedPdfBytes = await pdfDoc.save();
-      form.flatten();
-      setPdfBytes(modifiedPdfBytes);
+        setPdfBytes(modifiedPdfBytes);
       
+      
+      // return modifiedPdfBytes;
+        
     } catch (error) {
       console.error("Error generating PDF preview:", error);
-      setPdfBytes(null);
-      setSnackbar({
-        open: true,
-        message: "Error generating PDF preview",
-        severity: "error",
-      });
-    } finally {
+      if (!returnBytes) {
+        setPdfBytes(null);
+        setSnackbar({
+          open: true,
+          message: "Error generating PDF preview",
+          severity: "error",
+        });
+      }
+      } finally {
       setPdfGenerating(false);
     }
   }, [selectedTemplate, fields, formData, fileToArrayBuffer]);
@@ -265,7 +271,7 @@ export default function PDFCustomizationApp() {
       ...prev,
       [fieldName]: value,
     }));
-  }, [pdfBytes]);
+  }, []);
 
   const handleTemplateChange = useCallback((templateId) => {
     setFormData((prev) => ({ ...prev, template: templateId }));
@@ -293,130 +299,37 @@ export default function PDFCustomizationApp() {
   }, []);
 
   const handleGeneratePDF = async () => {
-    if (loading || pdfGenerating) {
-      setSnackbar({
-        open: true,
-        message: "PDF generation is already in progress. Please wait.",
-        severity: "info",
-      });
+    const canvas = document.querySelector(".react-pdf__Page__canvas");
+
+    if (!canvas) {
+      alert("Canvas not found.");
       return;
     }
-  
-    setLoading(true);
-  
-    try {
-      const response = await fetch(selectedTemplate.path);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-      }
-  
-      const arrayBuffer = await response.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const form = pdfDoc.getForm();
-      const pages = pdfDoc.getPages();
-      const firstPage = pages[0];
 
-      const backgroundFields = fields.filter(field => field.name === 'mainBackground');
-      const nonBackgroundFields = fields.filter(field => field.name !== 'mainBackground');
-      const orderedFields = [...backgroundFields, ...nonBackgroundFields];
-      
-      // Then use orderedFields instead of fields in your processing loop
-      for (const field of orderedFields) {
-              const value = formData[field.name];
-        if (!value) continue;
-        
-        if (value === undefined || value === null) continue;
-        
-        try {
-          // Handle text fields
-          if (typeof value === "string" && value.trim()) {
-            const textField = form.getTextField(field.name);
-            if (textField) {
-              textField.setText(value);
-            }
-          } else if (value instanceof File) {
-            const imageBytes = await fileToArrayBuffer(value);
-            let image;
-            
-            if (value.type === 'image/jpeg' || value.type === 'image/jpg') {
-              image = await pdfDoc.embedJpg(imageBytes);
-            } else if (value.type === 'image/png') {
-              image = await pdfDoc.embedPng(imageBytes);
-            } else {
-              console.warn(`Unsupported image type: ${value.type}`);
-              continue;
-            }
+    const originalWidth = canvas.width;
+    const originalHeight = canvas.height;
 
-            // Proper image handling using form fields
-            const formField = form.getField(field.name);
-            if (!formField) {
-              console.warn(`Form field ${field.name} not found`);
-              continue;
-            }
+    const scaleFactor = 2; 
+    const Canvas = document.createElement("canvas");
+    Canvas.width = originalWidth * scaleFactor;
+    Canvas.height = originalHeight * scaleFactor;
 
-            try {
-              const buttonField = form.getButton(field.name);
-              if (buttonField) {
-                buttonField.setImage(image);
-                console.log(`Set image for button field: ${field.name}`);
-              }
-            } catch (buttonError) {
-              console.log(`Field ${field.name} is not a button, using manual drawing`);
-              
-              const widgets = formField.acroField.getWidgets();
-              if (widgets && widgets.length > 0) {
-                const rect = widgets[0].getRectangle();
-                const x = rect.x;
-                const y = rect.y;
-                const width = rect.width;
-                const height = rect.height;
+    const ctx = Canvas.getContext("2d");
+    ctx.scale(scaleFactor, scaleFactor);
 
-                firstPage.drawImage(image, {
-                  x,
-                  y,
-                  width,
-                  height,
-                });
+    ctx.drawImage(canvas, 0, 0);
 
-                console.log(`Drew image at (${x}, ${y}) with dimensions ${width}x${height}`);
-              }
-            }
-          }
-        } catch (fieldError) {
-          console.warn(`Error processing field ${field.name}:`, fieldError);
-        }
-      }
-      
-      form.flatten();
-      const modifiedPdfBytes = await pdfDoc.save();
-      
-      // Create download link with the processed PDF
-      const pdfBlob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = pdfUrl;
-      link.setAttribute('download', `${selectedTemplate.name.replace(/\s+/g, '_')}_generated.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(pdfUrl);
-  
-      setSnackbar({
-        open: true,
-        message: "PDF generated successfully! Download started.",
-        severity: "success",
-      });
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to generate PDF. Please try again.",
-        severity: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    const imgData = Canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "pt",
+      format: [originalWidth, originalHeight],
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0, originalWidth, originalHeight);
+    pdf.save("Template_generated.pdf");
+  }
 
   const handleFormSubmit = () => {
     handleGeneratePDF();
