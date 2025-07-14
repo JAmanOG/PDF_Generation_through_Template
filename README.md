@@ -99,7 +99,7 @@ This project is licensed under the MIT License.
 
 - [React](https://react.dev/)
 - [Vite](https://vitejs.dev/)
-- [pdf.js](https://mozilla.github.io/pdf.js/) or similar libraries
+- [pdf.js](https://mozilla.github.io/pdf.js/) and pdf-lib or similar libraries
 
 ---
 
