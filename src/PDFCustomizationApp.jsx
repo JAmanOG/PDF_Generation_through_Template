@@ -1,14 +1,13 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { 
-  Container, Grid, Card, CardContent, CardMedia, TextField, Button, 
+   Grid, Card, CardContent, Button, 
   Typography, Box, RadioGroup, FormControlLabel, Radio, Alert, 
-  Snackbar, CircularProgress, Chip, Paper, Divider, IconButton, 
-  InputLabel, FormControl, Stack, Avatar, Fade, Backdrop, LinearProgress 
+  Snackbar, CircularProgress, Paper, 
+   Stack, Avatar, Fade, Backdrop 
 } from "@mui/material";
-import {
-  CloudUpload, Download, Refresh, Image as ImageIcon, PictureAsPdf, 
-  CheckCircle, Edit, Visibility, AutoAwesome, PlayArrow, Business, 
-  DesignServices, Info, PersonOutline, DocumentScanner, Star, Speed, Security
+import { Download, Refresh, PictureAsPdf, 
+  Edit, Business, 
+  DesignServices, DocumentScanner,
 } from "@mui/icons-material";
 import { PDFDocument } from "pdf-lib";
 import PDFFormTemplate from "./PDFFormTemplate";
