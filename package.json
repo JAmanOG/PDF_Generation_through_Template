@@ -15,17 +15,16 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource/roboto": "^5.2.6",
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
     "@react-pdf/renderer": "^4.3.0",
-    "@tailwindcss/vite": "^4.1.11",
     "jspdf": "^3.0.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-pdf": "^10.0.1",
-    "tailwindcss": "^4.1.11"
+    "react-pdf": "^10.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",
@@ -42,6 +41,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "identity-obj-proxy": "^3.0.0",
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
     "vite": "^7.0.4"

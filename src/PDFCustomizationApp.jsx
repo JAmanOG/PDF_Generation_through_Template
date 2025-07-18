@@ -1,13 +1,31 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { 
-   Grid, Card, CardContent, Button, 
-  Typography, Box, RadioGroup, FormControlLabel, Radio, Alert, 
-  Snackbar, CircularProgress, Paper, 
-   Stack, Avatar, Fade, Backdrop 
+import {
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  Typography,
+  Box,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  Paper,
+  Stack,
+  Avatar,
+  Fade,
+  Backdrop,
 } from "@mui/material";
-import { Download, Refresh, PictureAsPdf, 
-  Edit, Business, 
-  DesignServices, DocumentScanner,
+import {
+  Download,
+  Refresh,
+  PictureAsPdf,
+  Edit,
+  Business,
+  DesignServices,
+  DocumentScanner,
 } from "@mui/icons-material";
 import { PDFDocument, PDFName } from "pdf-lib";
 import PDFFormTemplate from "./PDFFormTemplate";
@@ -90,17 +108,14 @@ export default function PDFCustomizationApp() {
     severity: "success",
   });
 
-  const selectedTemplate = useMemo(() => 
-    templates.find((t) => t.id === formData.template), 
+  const selectedTemplate = useMemo(
+    () => templates.find((t) => t.id === formData.template),
     [formData.template]
   );
 
   useEffect(() => {
     const fetchFormFields = async () => {
       try {
-        const selectedTemplate = templates.find(
-          (t) => t.id === formData.template
-        );
         if (!selectedTemplate) return;
 
         const response = await fetch(selectedTemplate.path);
@@ -111,19 +126,26 @@ export default function PDFCustomizationApp() {
         const arrayBuffer = await response.arrayBuffer();
         const pdfDoc = await PDFDocument.load(arrayBuffer);
         const form = pdfDoc.getForm();
+        console.log("PDF Form loaded:", form);
         const fields = form.getFields();
+        console.log("Field Data: ", fields);
 
         const formFields = fields.map((field) => {
           const fieldName = field.getName();
+          console.log("Field Name: ", fieldName);
           const tempfieldType = field.constructor?.name || "Unknown";
+          console.log("Field Type (raw): ", tempfieldType);
           const fieldType = tempfieldType.replace(/\d+/g, "");
+          console.log("Field Type: ", fieldType);
+          const actions = field.acroField;
+          // console.log("Actions: ", actions);
           return {
             name: fieldName,
             type: fieldType,
           };
         });
 
-        // console.log("Form fields retrieved:", formFields);
+        console.log("Form fields retrieved:", formFields);
         setFields(formFields);
       } catch (error) {
         console.error("Error fetching form fields:", error);
@@ -149,120 +171,124 @@ export default function PDFCustomizationApp() {
     });
   }, []);
 
-  const generatePdfPreview = useCallback(async (returnBytes = false) => {
-    if (!selectedTemplate || fields.length === 0) {
-      setPdfBytes(null);
-      return;
-    }
-
-    try {
-      setPdfGenerating(true);
-      
-      const response = await fetch(selectedTemplate.path);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const form = pdfDoc.getForm();
-      const pages = pdfDoc.getPages();
-      const firstPage = pages[0];
-
-
-      for (const field of fields) {
-        const value = formData[field.name];
-        
-        if (!value) continue;
-
-        try {
-          // Handle text fields
-          if (typeof value === "string" && value.trim()) {
-            const textField = form.getTextField(field.name);
-            if (textField) {
-              textField.setText(value);
-            }
-          } 
-          // Handle image fields
-          else if (value instanceof File) {
-            const imageBytes = await fileToArrayBuffer(value);
-            let image;
-            
-            if (value.type === 'image/jpeg' || value.type === 'image/jpg') {
-              image = await pdfDoc.embedJpg(imageBytes);
-            } else if (value.type === 'image/png') {
-              image = await pdfDoc.embedPng(imageBytes);
-            } else {
-              console.warn(`Unsupported image type: ${value.type}`);
-              continue;
-            }
-
-            const formField = form.getField(field.name);
-            if (!formField) {
-              console.warn(`Form field ${field.name} not found`);
-              continue;
-            }
-
-            try {
-              const buttonField = form.getButton(field.name);
-              if (buttonField) {
-                buttonField.setImage(image);
-                console.log(`Set image for button field: ${field.name}`);
-              }
-            } catch (buttonError) {
-              console.log(`Field ${field.name} is not a button, using manual drawing`);
-              
-              // Fallback to manual drawing using widget position
-              const widgets = formField.acroField.getWidgets();
-              if (widgets && widgets.length > 0) {
-                const rect = widgets[0].getRectangle();
-                const x = rect.x;
-                const y = rect.y;
-                const width = rect.width;
-                const height = rect.height;
-
-                firstPage.drawImage(image, {
-                  x,
-                  y,
-                  width,
-                  height,
-                });
-
-                console.log(`Drew image at (${x}, ${y}) with dimensions ${width}x${height}`);
-              }
-            }
-          }
-        } catch (fieldError) {
-          console.warn(`Error processing field ${field.name}:`, fieldError);
-        }
-      }
-
-      const modifiedPdfBytes = await pdfDoc.save();
-        setPdfBytes(modifiedPdfBytes);
-      
-      
-      // return modifiedPdfBytes;
-        
-    } catch (error) {
-      console.error("Error generating PDF preview:", error);
-      if (!returnBytes) {
+  const generatePdfPreview = useCallback(
+    async (returnBytes = false) => {
+      if (!selectedTemplate || fields.length === 0) {
         setPdfBytes(null);
-        setSnackbar({
-          open: true,
-          message: "Error generating PDF preview",
-          severity: "error",
-        });
+        return;
       }
-      } finally {
-      setPdfGenerating(false);
-    }
-  }, [selectedTemplate, fields, formData, fileToArrayBuffer]);
 
-  useEffect(() => { 
+      try {
+        setPdfGenerating(true);
+
+        const response = await fetch(selectedTemplate.path);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const form = pdfDoc.getForm();
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+
+        console.log("Fields: ", fields);
+
+        for (const field of fields) {
+          const value = formData[field.name];
+
+          console.log("value: ", value);
+
+          if (!value) continue;
+
+          console.log("Field", field);
+
+          try {
+            // Handle text fields
+            if (typeof value === "string" && value.trim()) {
+              const textField = form.getTextField(field.name);
+              console.log("textField", textField);
+              if (textField) {
+                textField.setText(value);
+              }
+            }
+            // Handle image fields
+            else if (value instanceof File) {
+              const imageBytes = await fileToArrayBuffer(value);
+              let image;
+
+              if (value.type === "image/jpeg" || value.type === "image/jpg") {
+                image = await pdfDoc.embedJpg(imageBytes);
+              } else if (value.type === "image/png") {
+                image = await pdfDoc.embedPng(imageBytes);
+              } else {
+                console.warn(`Unsupported image type: ${value.type}`);
+                continue;
+              }
+
+              const formField = form.getField(field.name);
+              if (!formField) {
+                console.warn(`Form field ${field.name} not found`);
+                continue;
+              }
+
+              try {
+                const buttonField = form.getButton(field.name);
+                if (buttonField) {
+                  buttonField.setImage(image);
+                  console.log(`Set image for button field: ${field.name}`);
+                }
+              } catch (buttonError) {
+                console.log(
+                  `Field ${field.name} is not a button, using manual drawing`
+                );
+
+                // Fallback to manual drawing using widget position
+                const widgets = formField.acroField.getWidgets();
+                if (widgets && widgets.length > 0) {
+                  const rect = widgets[0].getRectangle();
+                  const x = rect.x;
+                  const y = rect.y;
+                  const width = rect.width;
+                  const height = rect.height;
+
+                  firstPage.drawImage(image, { x, y, width, height });
+
+                  console.log(
+                    `Drew image at (${x}, ${y}) with dimensions ${width}x${height}`
+                  );
+                }
+              }
+            }
+          } catch (fieldError) {
+            console.warn(`Error processing field ${field.name}:`, fieldError);
+          }
+        }
+
+        const modifiedPdfBytes = await pdfDoc.save();
+        setPdfBytes(modifiedPdfBytes);
+      } catch (error) {
+        console.error("Error generating PDF preview:", error);
+        if (!returnBytes) {
+          setPdfBytes(null);
+          setSnackbar({
+            open: true,
+            message: "Error generating PDF preview",
+            severity: "error",
+          });
+        }
+      } finally {
+        setPdfGenerating(false);
+      }
+    },
+    [selectedTemplate, fields, formData, fileToArrayBuffer]
+  );
+
+  useEffect(() => {
     const debounceTimer = setTimeout(() => {
       generatePdfPreview();
     }, 1500);
-    
+
     return () => clearTimeout(debounceTimer);
   }, [generatePdfPreview]);
 
@@ -309,7 +335,7 @@ export default function PDFCustomizationApp() {
     const originalWidth = canvas.width;
     const originalHeight = canvas.height;
 
-    const scaleFactor = 2; 
+    const scaleFactor = 2;
     const Canvas = document.createElement("canvas");
     Canvas.width = originalWidth * scaleFactor;
     Canvas.height = originalHeight * scaleFactor;
@@ -329,7 +355,7 @@ export default function PDFCustomizationApp() {
 
     pdf.addImage(imgData, "PNG", 0, 0, originalWidth, originalHeight);
     pdf.save("Template_generated.pdf");
-  }
+  };
 
   const handleFormSubmit = () => {
     handleGeneratePDF();
@@ -358,14 +384,16 @@ export default function PDFCustomizationApp() {
     }
 
     return (
-      <Box sx={{ 
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 2,
-        overflow: 'hidden',
-        backgroundColor: 'grey.50',
-        justifyItems: 'center',
-      }}>
+      <Box
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
+          overflow: "hidden",
+          backgroundColor: "grey.50",
+          justifyItems: "center",
+        }}
+      >
         <Document
           file={{ data: pdfBytes }}
           onLoadError={(error) => {
@@ -385,7 +413,7 @@ export default function PDFCustomizationApp() {
             </Box>
           }
         >
-          <Page 
+          <Page
             pageNumber={1}
             scale={0.8}
             renderTextLayer={false}
@@ -450,9 +478,9 @@ export default function PDFCustomizationApp() {
         </Stack>
       </Backdrop>
 
-      <Grid container spacing={4} sx={{ px: 2, py: 4 }}>
+      <Grid container spacing={4} sx={{ px: 2, py: 4, justifyContent:"center" }}>
         {/* Left Panel - Form */}
-        <Grid item xs={12} lg={4} height="100%" width={"60%"}>
+        <Grid size={{xs:12, lg:7}}  height="100%" width={"60%"}>
           <Paper
             elevation={0}
             sx={{
@@ -619,7 +647,7 @@ export default function PDFCustomizationApp() {
         </Grid>
 
         {/* Right Panel - Templates & Preview */}
-        <Grid item xs={12} lg={4} width={"35%"} height="100%">
+        <Grid size={{xs:12, lg:4}} width={"35%"} height="100%">
           <Stack spacing={3}>
             {/* Template Selection */}
             <Paper
@@ -744,6 +772,7 @@ export default function PDFCustomizationApp() {
                 borderColor: "divider",
                 overflow: "hidden",
                 background: "white",
+                height: "100%",
               }}
             >
               <Box sx={{ p: 3 }}>{PDFPreviewComponent}</Box>

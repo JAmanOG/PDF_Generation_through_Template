@@ -1,26 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-    Box,
-    Button,
-    Typography,
-    Paper,
-    Grid,
-    Chip,
-    Alert,
-    Card,
-    CardContent,
-    Stack,
-    Avatar,
-    Fade,
-    
-} from '@mui/material';
-import {
-    CloudUpload,
-    Image as ImageIcon,
-    CheckCircle,
-    Delete,
-    Preview,
-} from '@mui/icons-material';
+import {Box,Button,Typography,Paper,Grid,Chip,Alert,Input,Card,CardContent,Stack,Avatar,Fade} from '@mui/material';
+import {CloudUpload,Image as ImageIcon,CheckCircle,Delete,Preview} from '@mui/icons-material';
 import { getFieldIcon,renderTextField,formatFieldName,isImageField,renderCheckBox,renderDropdown,renderOptionList,renderRadioGroup } from './template_config';
 
 const PDFFormTemplate = React.memo(({ fields, formData, onFieldChange, onSubmit }) => {
@@ -205,11 +185,13 @@ const PDFFormTemplate = React.memo(({ fields, formData, onFieldChange, onSubmit 
                             fullWidth
                         >
                             {file ? `${file.name} selected` : `Choose ${displayName}`}
-                            <input
+                            <Input
                                 type="file"
-                                hidden
-                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                inputProps={{
+                                    accept: "image/jpeg,image/jpg,image/png,image/gif,image/webp",
+                                }}
                                 onChange={handleFileChange}
+                                sx={{ display: 'none' }}
                             />
                         </Button>
                         
@@ -272,6 +254,7 @@ const PDFFormTemplate = React.memo(({ fields, formData, onFieldChange, onSubmit 
             }
             grouped[groupKey].push(field);
         });
+        console.log("Grouped Fields:", grouped);
         return grouped;
     }, [fields]);
 
@@ -298,6 +281,9 @@ const PDFFormTemplate = React.memo(({ fields, formData, onFieldChange, onSubmit 
     }, [renderTextField, renderCheckBox, renderRadioGroup, renderDropdown, renderOptionList, renderButton]);
 
     const getGroupDisplayName = (fieldType) => {
+        console.log("Group FieldType:", fieldType);
+        if (!fieldType) return 'Unknown Group';
+
         const names = {
             'PDFImageUpload': 'Image Uploads',
             'PDFTextField': 'Text Fields',
@@ -383,14 +369,13 @@ const PDFFormTemplate = React.memo(({ fields, formData, onFieldChange, onSubmit 
                                 <Grid container spacing={3}>
                                     {fieldsOfType.map((field) => (
                                         <Grid 
-                                            item 
-                                            xs={12} 
-                                            sm={fieldType === 'PDFCheckBox' ? 6 : 12}
-                                            md={
-                                                fieldType === 'PDFCheckBox' ? 4 : 
-                                                fieldType === 'PDFTextField' ? 6 : 
-                                                fieldType === 'PDFImageUpload' ? 6 : 12
-                                            }
+                                            size={{
+                                                xs: 12, 
+                                                sm: fieldType === 'PDFCheckBox' ? 6 : 12,
+                                                md: fieldType === 'PDFCheckBox' ? 4 : 
+                                                    fieldType === 'PDFTextField' ? 6 : 
+                                                    fieldType === 'PDFImageUpload' ? 6 : 12
+                                            }}
                                             key={field.name}
                                         >
                                             <Fade in timeout={300}>

@@ -1,33 +1,6 @@
 import React from 'react';
-import {
-    Box,
-    TextField,
-    Checkbox,
-    FormControlLabel,
-    RadioGroup,
-    Radio,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel,
-    ListItemText,
-    OutlinedInput,
-    Typography,
-    Chip,
-    Card,
-    Stack,
-    
-} from '@mui/material';
-import {
-    
-    CloudUpload,
-    Image as ImageIcon,
-    CheckCircle,
-    Delete,
-    Preview,
-    TextFields,
-    CheckBox,
-} from '@mui/icons-material';
+import {Box,TextField,Checkbox,FormControlLabel,RadioGroup,Radio,Select,MenuItem,FormControl,InputLabel,ListItemText,OutlinedInput,Typography,Chip,Card,Stack} from '@mui/material';
+import {TextFields,CheckBox} from '@mui/icons-material';
     
     const getFieldIcon = (fieldType) => {
         const iconProps = { fontSize: 'small', color: 'primary' };
@@ -70,8 +43,8 @@ import {
 
     const renderTextField = (field, formData,validationErrors ,onFieldChange) => {
         const isMultiline = field.name.toLowerCase().includes('description') || 
-                                             field.name.toLowerCase().includes('comment') || 
-                                             field.name.toLowerCase().includes('notes');
+                            field.name.toLowerCase().includes('comment') || 
+                            field.name.toLowerCase().includes('notes');
         
         return (
             <TextField
@@ -241,11 +214,11 @@ import {
 
     export {
         getFieldIcon,
-        renderTextField,
+        isImageField,
+        formatFieldName,
         renderCheckBox,
+        renderTextField,
         renderRadioGroup,
         renderDropdown,
         renderOptionList,
-        isImageField,
-        formatFieldName,
     }
