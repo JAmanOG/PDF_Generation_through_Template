@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "ROLLUP_BINARY=false vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest --watchAll",
@@ -45,5 +45,8 @@
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
     "vite": "^7.0.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.9.5"
   }
 }
